@@ -49,6 +49,8 @@
     "webpack": "^2.5.1"
   },
   "dependencies": {
-    "prop-types": "^15.5.8"
+    "prop-types": "^15.5.8",
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1"
   }
 }

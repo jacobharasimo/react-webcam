@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("react"), require("react-dom"));
+		module.exports = factory(require("react"));
 	else if(typeof define === 'function' && define.amd)
-		define(["react", "react-dom"], factory);
+		define(["react"], factory);
 	else if(typeof exports === 'object')
-		exports["Webcam"] = factory(require("react"), require("react-dom"));
+		exports["Webcam"] = factory(require("react"));
 	else
-		root["Webcam"] = factory(root["React"], root["ReactDOM"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_5__, __WEBPACK_EXTERNAL_MODULE_6__) {
+		root["Webcam"] = factory(root["React"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_5__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 9);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -289,7 +289,7 @@ if (true) {
   // By explicitly using `prop-types` you are opting into new development behavior.
   // http://fb.me/prop-types-in-prod
   var throwOnDirectAccess = true;
-  module.exports = __webpack_require__(9)(isValidElement, throwOnDirectAccess);
+  module.exports = __webpack_require__(8)(isValidElement, throwOnDirectAccess);
 } else {
   // By explicitly using `prop-types` you are opting into new production behavior.
   // http://fb.me/prop-types-in-prod
@@ -304,12 +304,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_5__;
 
 /***/ }),
 /* 6 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
-
-/***/ }),
-/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -405,7 +399,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 };
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -472,7 +466,7 @@ function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
 module.exports = checkPropTypes;
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -490,10 +484,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 var emptyFunction = __webpack_require__(0);
 var invariant = __webpack_require__(1);
 var warning = __webpack_require__(2);
-var assign = __webpack_require__(7);
+var assign = __webpack_require__(6);
 
 var ReactPropTypesSecret = __webpack_require__(3);
-var checkPropTypes = __webpack_require__(8);
+var checkPropTypes = __webpack_require__(7);
 
 module.exports = function (isValidElement, throwOnDirectAccess) {
   /* global Symbol */
@@ -996,7 +990,7 @@ module.exports = function (isValidElement, throwOnDirectAccess) {
 };
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1015,8 +1009,6 @@ var _react2 = _interopRequireDefault(_react);
 var _propTypes = __webpack_require__(4);
 
 var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _reactDom = __webpack_require__(6);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1047,7 +1039,9 @@ var Webcam = function (_Component) {
   _createClass(Webcam, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
-      if (!hasGetUserMedia()) return;
+      if (!hasGetUserMedia()) {
+        return;
+      }
 
       Webcam.mountedInstances.push(this);
 
@@ -1083,7 +1077,9 @@ var Webcam = function (_Component) {
   }, {
     key: 'getScreenshot',
     value: function getScreenshot() {
-      if (!this.state.hasUserMedia) return null;
+      if (!this.state.hasUserMedia) {
+        return null;
+      }
 
       var canvas = this.getCanvas();
       return canvas && canvas.toDataURL(this.props.screenshotFormat);
@@ -1091,16 +1087,22 @@ var Webcam = function (_Component) {
   }, {
     key: 'getCanvas',
     value: function getCanvas() {
-      var video = (0, _reactDom.findDOMNode)(this);
+      var video = this.video;
 
-      if (!this.state.hasUserMedia || !video.videoHeight) return null;
+      if (!this.state.hasUserMedia || !video.videoHeight) {
+        return null;
+      }
 
       if (!this.ctx) {
         var _canvas = document.createElement('canvas');
-        var aspectRatio = video.videoWidth / video.videoHeight;
-
-        _canvas.width = video.clientWidth;
-        _canvas.height = video.clientWidth / aspectRatio;
+        if (!this.props.fullResolutionScreenshot) {
+          var aspectRatio = video.videoWidth / video.videoHeight;
+          _canvas.width = video.clientWidth;
+          _canvas.height = video.clientWidth / aspectRatio;
+        } else {
+          _canvas.width = video.videoWidth;
+          _canvas.height = video.videoHeight;
+        }
 
         this.canvas = _canvas;
         this.ctx = _canvas.getContext('2d');
@@ -1202,7 +1204,7 @@ var Webcam = function (_Component) {
         });
 
         this.props.onUserMedia();
-      } catch (error) {
+      } catch (e) {
         this.stream = stream;
         this.video.srcObject = stream;
         this.setState({
@@ -1215,16 +1217,24 @@ var Webcam = function (_Component) {
     value: function render() {
       var _this3 = this;
 
+      var _props = this.props,
+          width = _props.width,
+          height = _props.height,
+          muted = _props.muted,
+          className = _props.className,
+          style = _props.style;
+      var src = this.state.src;
+
       return _react2.default.createElement('video', {
         autoPlay: true,
-        width: this.props.width,
-        height: this.props.height,
-        src: this.state.src,
-        muted: this.props.muted,
-        className: this.props.className,
-        style: this.props.style,
+        width: width,
+        height: height,
+        src: src,
+        muted: muted,
+        className: className,
+        style: style,
         ref: function ref(_ref) {
-          return _this3.video = _ref;
+          _this3.video = _ref;
         }
       });
     }
@@ -1234,6 +1244,7 @@ var Webcam = function (_Component) {
 }(_react.Component);
 
 Webcam.defaultProps = {
+  fullResolutionScreenshot: false,
   audio: true,
   className: '',
   height: 480,
@@ -1243,6 +1254,7 @@ Webcam.defaultProps = {
   width: 640
 };
 Webcam.propTypes = {
+  fullResolutionScreenshot: _propTypes2.default.bool,
   audio: _propTypes2.default.bool,
   muted: _propTypes2.default.bool,
   onUserMedia: _propTypes2.default.func,

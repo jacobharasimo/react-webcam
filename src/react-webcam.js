@@ -1,44 +1,46 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { findDOMNode } from 'react-dom';
 
 function hasGetUserMedia() {
   return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
-            navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    navigator.mozGetUserMedia || navigator.msGetUserMedia);
 }
 
 export default class Webcam extends Component {
   static defaultProps = {
+    fullResolutionScreenshot: false,
     audio: true,
     className: '',
     height: 480,
     muted: false,
-    onUserMedia: () => {},
+    onUserMedia: () => {
+    },
     screenshotFormat: 'image/webp',
-    width: 640,
+    width: 640
   };
 
   static propTypes = {
+    fullResolutionScreenshot: PropTypes.bool,
     audio: PropTypes.bool,
     muted: PropTypes.bool,
     onUserMedia: PropTypes.func,
     height: PropTypes.oneOfType([
       PropTypes.number,
-      PropTypes.string,
+      PropTypes.string
     ]),
     width: PropTypes.oneOfType([
       PropTypes.number,
-      PropTypes.string,
+      PropTypes.string
     ]),
     screenshotFormat: PropTypes.oneOf([
       'image/webp',
       'image/png',
-      'image/jpeg',
+      'image/jpeg'
     ]),
     style: PropTypes.object,
     className: PropTypes.string,
     audioSource: PropTypes.string,
-    videoSource: PropTypes.string,
+    videoSource: PropTypes.string
   };
 
   static mountedInstances = [];
@@ -48,12 +50,14 @@ export default class Webcam extends Component {
   constructor() {
     super();
     this.state = {
-      hasUserMedia: false,
+      hasUserMedia: false
     };
   }
 
   componentDidMount() {
-    if (!hasGetUserMedia()) return;
+    if (!hasGetUserMedia()) {
+      return;
+    }
 
     Webcam.mountedInstances.push(this);
 
@@ -83,23 +87,31 @@ export default class Webcam extends Component {
   }
 
   getScreenshot() {
-    if (!this.state.hasUserMedia) return null;
+    if (!this.state.hasUserMedia) {
+      return null;
+    }
 
     const canvas = this.getCanvas();
     return canvas && canvas.toDataURL(this.props.screenshotFormat);
   }
 
   getCanvas() {
-    const video = findDOMNode(this);
+    const video = this.video;
 
-    if (!this.state.hasUserMedia || !video.videoHeight) return null;
+    if (!this.state.hasUserMedia || !video.videoHeight) {
+      return null;
+    }
 
     if (!this.ctx) {
       const canvas = document.createElement('canvas');
-      const aspectRatio = video.videoWidth / video.videoHeight;
-
-      canvas.width = video.clientWidth;
-      canvas.height = video.clientWidth / aspectRatio;
+      if (!this.props.fullResolutionScreenshot) {
+        const aspectRatio = video.videoWidth / video.videoHeight;
+        canvas.width = video.clientWidth;
+        canvas.height = video.clientWidth / aspectRatio;
+      } else {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
 
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
@@ -113,20 +125,20 @@ export default class Webcam extends Component {
 
   requestUserMedia() {
     navigator.getUserMedia = navigator.getUserMedia ||
-                          navigator.webkitGetUserMedia ||
-                          navigator.mozGetUserMedia ||
-                          navigator.msGetUserMedia;
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia;
 
     const sourceSelected = (audioSource, videoSource) => {
       const constraints = {
         video: {
-          optional: [{ sourceId: videoSource }],
-        },
+          optional: [{ sourceId: videoSource }]
+        }
       };
 
       if (this.props.audio) {
         constraints.audio = {
-          optional: [{ sourceId: audioSource }],
+          optional: [{ sourceId: audioSource }]
         };
       }
 
@@ -180,22 +192,22 @@ export default class Webcam extends Component {
   handleUserMedia(error, stream) {
     if (error) {
       this.setState({
-        hasUserMedia: false,
+        hasUserMedia: false
       });
 
       return;
     }
     try {
       const src = window.URL.createObjectURL(stream);
-  
+
       this.stream = stream;
       this.setState({
         hasUserMedia: true,
-        src,
+        src
       });
-  
+
       this.props.onUserMedia();
-    } catch(error) {
+    } catch (e) {
       this.stream = stream;
       this.video.srcObject = stream;
       this.setState({
@@ -205,16 +217,18 @@ export default class Webcam extends Component {
   }
 
   render() {
+    const { width, height, muted, className, style } = this.props;
+    const { src } = this.state;
     return (
       <video
         autoPlay
-        width={this.props.width}
-        height={this.props.height}
-        src={this.state.src}
-        muted={this.props.muted}
-        className={this.props.className}
-        style={this.props.style}
-        ref={ref => this.video = ref}
+        width={width}
+        height={height}
+        src={src}
+        muted={muted}
+        className={className}
+        style={style}
+        ref={(ref) => { this.video = ref; }}
       />
     );
   }
