@@ -16,7 +16,8 @@ export default class Webcam extends Component {
     onUserMedia: () => {
     },
     screenshotFormat: 'image/webp',
-    width: 640
+    width: 640,
+    cameraSelector: 'front'
   };
 
   static propTypes = {
@@ -31,6 +32,10 @@ export default class Webcam extends Component {
     width: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.string
+    ]),
+    cameraSelector: PropTypes.oneOf([
+      'front',
+      'back'
     ]),
     screenshotFormat: PropTypes.oneOf([
       'image/webp',
@@ -129,8 +134,14 @@ export default class Webcam extends Component {
       navigator.msGetUserMedia;
 
     const sourceSelected = (videoConstraints) => {
+      const cameraSelector = this.props.cameraSelector === 'back'
+        ?
+        'user' : /* front */
+        'enviroment'; /* back */
+
       const constraints = {
         video: {
+          facingMode: cameraSelector,
           width: {
             min: 1024,
             ideal: 1280,
