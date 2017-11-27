@@ -1123,8 +1123,12 @@ var Webcam = function (_Component) {
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
       var sourceSelected = function sourceSelected(videoConstraints) {
+        var cameraSelector = _this2.props.cameraSelector === 'back' ? 'user' : /* front */
+        'enviroment'; /* back */
+
         var constraints = {
           video: {
+            facingMode: cameraSelector,
             width: {
               min: 1024,
               ideal: 1280,
@@ -1226,7 +1230,8 @@ Webcam.defaultProps = {
   muted: false,
   onUserMedia: function onUserMedia() {},
   screenshotFormat: 'image/webp',
-  width: 640
+  width: 640,
+  cameraSelector: 'front'
 };
 Webcam.propTypes = {
   fullResolutionScreenshot: _propTypes2.default.bool,
@@ -1235,6 +1240,7 @@ Webcam.propTypes = {
   onUserMedia: _propTypes2.default.func,
   height: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
   width: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
+  cameraSelector: _propTypes2.default.oneOf(['front', 'back']),
   screenshotFormat: _propTypes2.default.oneOf(['image/webp', 'image/png', 'image/jpeg']),
   style: _propTypes2.default.object,
   className: _propTypes2.default.string,
