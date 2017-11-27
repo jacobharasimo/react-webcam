@@ -1125,14 +1125,13 @@ var Webcam = function (_Component) {
       var sourceSelected = function sourceSelected(audioSource, videoSource) {
         var constraints = {
           video: {
-            optional: [{ sourceId: videoSource }]
+            width: { min: 1024, ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 }
           }
         };
 
-        if (_this2.props.audio) {
-          constraints.audio = {
-            optional: [{ sourceId: audioSource }]
-          };
+        if (!_this2.props.audio) {
+          constraints.audio = false;
         }
 
         navigator.getUserMedia(constraints, function (stream) {
@@ -1146,41 +1145,7 @@ var Webcam = function (_Component) {
         });
       };
 
-      if (this.props.audioSource && this.props.videoSource) {
-        sourceSelected(this.props.audioSource, this.props.videoSource);
-      } else if ('mediaDevices' in navigator) {
-        navigator.mediaDevices.enumerateDevices().then(function (devices) {
-          var audioSource = null;
-          var videoSource = null;
-
-          devices.forEach(function (device) {
-            if (device.kind === 'audio') {
-              audioSource = device.id;
-            } else if (device.kind === 'video') {
-              videoSource = device.id;
-            }
-          });
-
-          sourceSelected(audioSource, videoSource);
-        }).catch(function (error) {
-          console.log(error.name + ': ' + error.message); // eslint-disable-line no-console
-        });
-      } else {
-        MediaStreamTrack.getSources(function (sources) {
-          var audioSource = null;
-          var videoSource = null;
-
-          sources.forEach(function (source) {
-            if (source.kind === 'audio') {
-              audioSource = source.id;
-            } else if (source.kind === 'video') {
-              videoSource = source.id;
-            }
-          });
-
-          sourceSelected(audioSource, videoSource);
-        });
-      }
+      sourceSelected(this.props.audioSource, this.props.videoSource);
 
       Webcam.userMediaRequested = true;
     }
@@ -1263,7 +1228,6 @@ Webcam.propTypes = {
   screenshotFormat: _propTypes2.default.oneOf(['image/webp', 'image/png', 'image/jpeg']),
   style: _propTypes2.default.object,
   className: _propTypes2.default.string,
-  audioSource: _propTypes2.default.string,
   videoSource: _propTypes2.default.string
 };
 Webcam.mountedInstances = [];
