@@ -1122,13 +1122,23 @@ var Webcam = function (_Component) {
 
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
-      var sourceSelected = function sourceSelected(audioSource, videoSource) {
+      var sourceSelected = function sourceSelected(videoConstraints) {
         var constraints = {
           video: {
-            width: { min: 1024, ideal: 1280, max: 1920 },
-            height: { ideal: 720, max: 1080 }
+            width: {
+              min: 1024,
+              ideal: 1280,
+              max: 1920
+            },
+            height: {
+              ideal: 720,
+              max: 1080
+            }
           }
         };
+        if (videoConstraints) {
+          Object.merge(constraints.video, videoConstraints);
+        }
 
         if (!_this2.props.audio) {
           constraints.audio = false;
@@ -1145,7 +1155,7 @@ var Webcam = function (_Component) {
         });
       };
 
-      sourceSelected(this.props.audioSource, this.props.videoSource);
+      sourceSelected(this.props.videoSource);
 
       Webcam.userMediaRequested = true;
     }
