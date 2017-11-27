@@ -128,13 +128,23 @@ export default class Webcam extends Component {
       navigator.mozGetUserMedia ||
       navigator.msGetUserMedia;
 
-    const sourceSelected = (audioSource, videoSource) => {
-      var constraints = {
+    const sourceSelected = (videoConstraints) => {
+      const constraints = {
         video: {
-          width: { min: 1024, ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
+          width: {
+            min: 1024,
+            ideal: 1280,
+            max: 1920
+          },
+          height: {
+            ideal: 720,
+            max: 1080
+          }
         }
       };
+      if (videoConstraints) {
+        Object.merge(constraints.video, videoConstraints);
+      }
 
       if (!this.props.audio) {
         constraints.audio = false;
@@ -147,7 +157,7 @@ export default class Webcam extends Component {
       });
     };
 
-    sourceSelected(this.props.audioSource, this.props.videoSource);
+    sourceSelected(this.props.videoSource);
 
     Webcam.userMediaRequested = true;
   }
