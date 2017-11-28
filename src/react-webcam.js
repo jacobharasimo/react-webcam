@@ -54,26 +54,47 @@ export default class Webcam extends Component {
   constructor() {
     super();
     this.state = {
-      hasUserMedia: false
+      hasUserMedia: false,
+      cameraSelector: 'front'
     };
+  }
+
+  componentWillMount() {
+    console.log('initial value ', this.props.cameraSelector);
+    this.setCameraEnviroment(this.props.cameraSelector);
+  }
+
+  setCameraEnviroment(direction) {
+    var cameraSelector = direction === 'back' ?
+      'environment' :
+      'user';
+    console.log('camera selector changed to ', direction, ' setting ', cameraSelector);
+    this.setState({ cameraSelector: cameraSelector });
   }
 
   componentDidMount() {
     if (!hasGetUserMedia()) {
       return;
     }
-
     Webcam.mountedInstances.push(this);
-
     if (!this.state.hasUserMedia && !Webcam.userMediaRequested) {
       this.requestUserMedia();
     }
   }
 
-  componentWillUnmount() {
+  componentWillReceiveProps(nextProps, current) {
+    // You don't have to do this check first, but it can help prevent an unneeded render
+    if (nextProps.cameraSelector !== this.props.cameraSelector) {
+      this.setCameraEnviroment(nextProps.cameraSelector);
+      setTimeout(() => {
+        this.requestUserMedia();
+      }, 0);
+    }
+  }
+
+  closeMediaStream(){
     const index = Webcam.mountedInstances.indexOf(this);
     Webcam.mountedInstances.splice(index, 1);
-
     if (Webcam.mountedInstances.length === 0 && this.state.hasUserMedia) {
       if (this.stream.stop) {
         this.stream.stop();
@@ -88,6 +109,10 @@ export default class Webcam extends Component {
       Webcam.userMediaRequested = false;
       window.URL.revokeObjectURL(this.state.src);
     }
+  }
+
+  componentWillUnmount() {
+    this.closeMediaStream();
   }
 
   getScreenshot() {
@@ -128,20 +153,23 @@ export default class Webcam extends Component {
   }
 
   requestUserMedia() {
+    if(this.stream && this.stream.active){
+      console.log('close stream');
+      this.closeMediaStream();
+    }
+    console.log('render user media object');
     navigator.getUserMedia = navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
       navigator.mozGetUserMedia ||
       navigator.msGetUserMedia;
 
+
     const sourceSelected = (videoConstraints) => {
-      const cameraSelector = this.props.cameraSelector === 'back'
-        ?
-        'user' : /* front */
-        'enviroment'; /* back */
+      alert('activate '+ this.state.cameraSelector + ' camera');
 
       const constraints = {
         video: {
-          facingMode: cameraSelector,
+          facingMode: this.state.cameraSelector,
           width: {
             min: 1024,
             ideal: 1280,
