@@ -1031,30 +1031,54 @@ var Webcam = function (_Component) {
     var _this = _possibleConstructorReturn(this, (Webcam.__proto__ || Object.getPrototypeOf(Webcam)).call(this));
 
     _this.state = {
-      hasUserMedia: false
+      hasUserMedia: false,
+      cameraSelector: 'front'
     };
     return _this;
   }
 
   _createClass(Webcam, [{
+    key: 'componentWillMount',
+    value: function componentWillMount() {
+      console.log('initial value ', this.props.cameraSelector);
+      this.setCameraEnviroment(this.props.cameraSelector);
+    }
+  }, {
+    key: 'setCameraEnviroment',
+    value: function setCameraEnviroment(direction) {
+      var cameraSelector = direction === 'back' ? 'environment' : 'user';
+      console.log('camera selector changed to ', direction, ' setting ', cameraSelector);
+      this.setState({ cameraSelector: cameraSelector });
+    }
+  }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
       if (!hasGetUserMedia()) {
         return;
       }
-
       Webcam.mountedInstances.push(this);
-
       if (!this.state.hasUserMedia && !Webcam.userMediaRequested) {
         this.requestUserMedia();
       }
     }
   }, {
-    key: 'componentWillUnmount',
-    value: function componentWillUnmount() {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps, current) {
+      var _this2 = this;
+
+      // You don't have to do this check first, but it can help prevent an unneeded render
+      if (nextProps.cameraSelector !== this.props.cameraSelector) {
+        this.setCameraEnviroment(nextProps.cameraSelector);
+        setTimeout(function () {
+          _this2.requestUserMedia();
+        }, 0);
+      }
+    }
+  }, {
+    key: 'closeMediaStream',
+    value: function closeMediaStream() {
       var index = Webcam.mountedInstances.indexOf(this);
       Webcam.mountedInstances.splice(index, 1);
-
       if (Webcam.mountedInstances.length === 0 && this.state.hasUserMedia) {
         if (this.stream.stop) {
           this.stream.stop();
@@ -1073,6 +1097,11 @@ var Webcam = function (_Component) {
         Webcam.userMediaRequested = false;
         window.URL.revokeObjectURL(this.state.src);
       }
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      this.closeMediaStream();
     }
   }, {
     key: 'getScreenshot',
@@ -1118,17 +1147,21 @@ var Webcam = function (_Component) {
   }, {
     key: 'requestUserMedia',
     value: function requestUserMedia() {
-      var _this2 = this;
+      var _this3 = this;
 
+      if (this.stream && this.stream.active) {
+        console.log('close stream');
+        this.closeMediaStream();
+      }
+      console.log('render user media object');
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
       var sourceSelected = function sourceSelected(videoConstraints) {
-        var cameraSelector = _this2.props.cameraSelector === 'back' ? 'user' : /* front */
-        'enviroment'; /* back */
+        alert('activate ' + _this3.state.cameraSelector + ' camera');
 
         var constraints = {
           video: {
-            facingMode: cameraSelector,
+            facingMode: _this3.state.cameraSelector,
             width: {
               min: 1024,
               ideal: 1280,
@@ -1144,7 +1177,7 @@ var Webcam = function (_Component) {
           Object.merge(constraints.video, videoConstraints);
         }
 
-        if (!_this2.props.audio) {
+        if (!_this3.props.audio) {
           constraints.audio = false;
         }
 
@@ -1194,7 +1227,7 @@ var Webcam = function (_Component) {
   }, {
     key: 'render',
     value: function render() {
-      var _this3 = this;
+      var _this4 = this;
 
       var _props = this.props,
           width = _props.width,
@@ -1213,7 +1246,7 @@ var Webcam = function (_Component) {
         className: className,
         style: style,
         ref: function ref(_ref) {
-          _this3.video = _ref;
+          _this4.video = _ref;
         }
       });
     }
