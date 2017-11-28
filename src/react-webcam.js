@@ -6,6 +6,21 @@ function hasGetUserMedia() {
     navigator.mozGetUserMedia || navigator.msGetUserMedia);
 }
 
+const defaultConstraints = {
+  video: {
+    facingMode: 'user',
+    width: {
+      min: 1024,
+      ideal: 1280,
+      max: 1920
+    },
+    height: {
+      ideal: 720,
+      max: 1080
+    }
+  }
+};
+
 export default class Webcam extends Component {
   static defaultProps = {
     fullResolutionScreenshot: false,
@@ -55,22 +70,32 @@ export default class Webcam extends Component {
     super();
     this.state = {
       hasUserMedia: false,
-      cameraSelector: 'front'
+      cameraSelector: 'front',
+      deviceCount: 0
     };
+
+    this.devices = navigator.mediaDevices.enumerateDevices()
+      .then((devices) => {
+        const videoDevices = [];
+        devices.forEach((device) => {
+          if (device.kind === 'videoinput') {
+            videoDevices.push(device);
+          }
+        });
+        this.setState({ deviceCount: videoDevices.length });
+        const constraints = {
+          deviceId: { exact: devices[1] }
+        };
+        Object.assign(constraints, defaultConstraints);
+        return videoDevices;
+      });
   }
 
   componentWillMount() {
-    console.log('initial value ', this.props.cameraSelector);
+    // console.log('initial value ', this.props.cameraSelector);
     this.setCameraEnviroment(this.props.cameraSelector);
   }
 
-  setCameraEnviroment(direction) {
-    var cameraSelector = direction === 'back' ?
-      'environment' :
-      'user';
-    console.log('camera selector changed to ', direction, ' setting ', cameraSelector);
-    this.setState({ cameraSelector: cameraSelector });
-  }
 
   componentDidMount() {
     if (!hasGetUserMedia()) {
@@ -82,44 +107,40 @@ export default class Webcam extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps, current) {
+  componentWillReceiveProps(nextProps) {
     // You don't have to do this check first, but it can help prevent an unneeded render
     if (nextProps.cameraSelector !== this.props.cameraSelector) {
-      this.setCameraEnviroment(nextProps.cameraSelector);
-      setTimeout(() => {
-        this.requestUserMedia();
-      }, 0);
-    }
-  }
-
-  closeMediaStream(){
-    const index = Webcam.mountedInstances.indexOf(this);
-    Webcam.mountedInstances.splice(index, 1);
-    if (Webcam.mountedInstances.length === 0 && this.state.hasUserMedia) {
-      if (this.stream.stop) {
-        this.stream.stop();
-      } else {
-        if (this.stream.getVideoTracks) {
-          this.stream.getVideoTracks().map(track => track.stop());
-        }
-        if (this.stream.getAudioTracks) {
-          this.stream.getAudioTracks().map(track => track.stop());
-        }
+      if (this.canSwitchCamera()) {
+        this.setCameraEnviroment(nextProps.cameraSelector);
+        setTimeout(() => {
+          this.requestUserMedia();
+        }, 0);
       }
-      Webcam.userMediaRequested = false;
-      window.URL.revokeObjectURL(this.state.src);
     }
   }
 
   componentWillUnmount() {
     this.closeMediaStream();
+    const index = Webcam.mountedInstances.indexOf(this);
+    Webcam.mountedInstances.splice(index, 1);
+    if (Webcam.mountedInstances.length === 0 && this.state.hasUserMedia) {
+      Webcam.userMediaRequested = false;
+      window.URL.revokeObjectURL(this.state.src);
+    }
+  }
+
+  setCameraEnviroment(direction) {
+    const cameraSelector = direction === 'back' ?
+      'environment' :
+      'user';
+    // console.log('camera selector changed to ', direction, ' setting ', cameraSelector);
+    this.setState({ cameraSelector });
   }
 
   getScreenshot() {
     if (!this.state.hasUserMedia) {
       return null;
     }
-
     const canvas = this.getCanvas();
     return canvas && canvas.toDataURL(this.props.screenshotFormat);
   }
@@ -152,12 +173,30 @@ export default class Webcam extends Component {
     return canvas;
   }
 
-  requestUserMedia() {
-    if(this.stream && this.stream.active){
-      console.log('close stream');
-      this.closeMediaStream();
+  canSwitchCamera() {
+    return this.state.deviceCount > 1;
+  }
+
+  closeMediaStream() {
+    if (this.stream.stop) {
+      this.stream.stop();
+    } else {
+      if (this.stream.getVideoTracks) {
+        this.stream.getVideoTracks().map(track => track.stop());
+      }
+      if (this.stream.getAudioTracks) {
+        this.stream.getAudioTracks().map(track => track.stop());
+      }
     }
-    console.log('render user media object');
+  }
+
+  requestUserMedia() {
+    if (this.stream && this.stream.active) {
+      // console.log('close stream');
+      this.closeMediaStream();
+      // this.stream.getVideoTracks().map(track => track.stop());
+    }
+    // console.log('render user media object');
     navigator.getUserMedia = navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
       navigator.mozGetUserMedia ||
@@ -165,24 +204,13 @@ export default class Webcam extends Component {
 
 
     const sourceSelected = (videoConstraints) => {
-      alert('activate '+ this.state.cameraSelector + ' camera');
+      console.info(`activate ${this.state.cameraSelector} camera`);
 
-      const constraints = {
-        video: {
-          facingMode: this.state.cameraSelector,
-          width: {
-            min: 1024,
-            ideal: 1280,
-            max: 1920
-          },
-          height: {
-            ideal: 720,
-            max: 1080
-          }
-        }
-      };
+      const constraints = defaultConstraints;
+      constraints.video.facingMode = this.state.cameraSelector;
+
       if (videoConstraints) {
-        Object.merge(constraints.video, videoConstraints);
+        Object.assign(constraints.video, videoConstraints);
       }
 
       if (!this.props.audio) {
@@ -206,7 +234,6 @@ export default class Webcam extends Component {
       this.setState({
         hasUserMedia: false
       });
-
       return;
     }
     try {
